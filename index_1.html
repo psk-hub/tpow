@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPow_Unl — Truck Powder Ingredient Unload | CompactLogix Control System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e0c;
+    --panel: #16181a;
+    --panel-2: #1d2024;
+    --line: #2a2e33;
+    --ink: #e8e6df;
+    --ink-dim: #8a8a82;
+    --ink-low: #5a5a55;
+    --amber: #f5a623;
+    --amber-glow: rgba(245, 166, 35, 0.15);
+    --green: #6fbf5b;
+    --green-glow: rgba(111, 191, 91, 0.18);
+    --red: #d9534f;
+    --red-glow: rgba(217, 83, 79, 0.18);
+    --blue: #4a90e2;
+    --cyan: #4ecdc4;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --serif: 'Fraunces', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.65;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(245,166,35,0.04), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(74,144,226,0.04), transparent 40%);
+    background-attachment: fixed;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Top status bar */
+  .statusbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,14,12,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-dim);
+  }
+  .statusbar .left { display: flex; gap: 24px; align-items: center; }
+  .statusbar .right { display: flex; gap: 24px; align-items: center; }
+  .led {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green-glow);
+    animation: pulse 2s infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 60px;
+    align-items: start;
+  }
+  .hero-tag {
+    color: var(--amber);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--amber);
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 5.5vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    color: var(--ink);
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--amber);
+    font-weight: 300;
+  }
+  .hero-sub {
+    color: var(--ink-dim);
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 640px;
+    margin-bottom: 40px;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .meta-cell {
+    flex: 1;
+    min-width: 140px;
+    padding: 16px 20px;
+    border-right: 1px solid var(--line);
+  }
+  .meta-cell:last-child { border-right: none; }
+  .meta-label {
+    font-size: 10px;
+    color: var(--ink-low);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+  .meta-value {
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* Schematic card */
+  .schematic-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 24px;
+    position: relative;
+  }
+  .schematic-card::before {
+    content: 'DWG-001';
+    position: absolute;
+    top: -1px;
+    right: 20px;
+    background: var(--bg);
+    color: var(--amber);
+    padding: 2px 10px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+  }
+  .schematic-title {
+    font-size: 10px;
+    color: var(--ink-low);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .schematic svg { width: 100%; height: auto; display: block; }
+
+  /* Sections */
+  section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-header {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px;
+    margin-bottom: 48px;
+    align-items: baseline;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .section-num span {
+    color: var(--ink-low);
+    margin-right: 12px;
+  }
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(28px, 3.5vw, 44px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .section-title em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .prose {
+    max-width: 820px;
+    color: var(--ink);
+    font-size: 14.5px;
+    line-height: 1.75;
+  }
+  .prose p + p { margin-top: 1.2em; }
+  .prose strong {
+    color: var(--ink);
+    font-weight: 600;
+    background: var(--amber-glow);
+    padding: 1px 4px;
+  }
+
+  /* Bento grid for architecture */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 32px;
+  }
+  .arch-card {
+    background: var(--panel);
+    padding: 28px;
+    position: relative;
+  }
+  .arch-card.span-6 { grid-column: span 6; }
+  .arch-card.span-4 { grid-column: span 4; }
+  .arch-card.span-8 { grid-column: span 8; }
+  .arch-card.span-12 { grid-column: span 12; }
+  .arch-card-label {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .arch-card-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .arch-card p {
+    color: var(--ink-dim);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* Spec table */
+  .spec-table {
+    border: 1px solid var(--line);
+    margin-top: 24px;
+  }
+  .spec-row {
+    display: grid;
+    grid-template-columns: 200px 140px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row:hover { background: var(--panel-2); }
+  .spec-cell {
+    padding: 14px 20px;
+    font-size: 13px;
+    border-right: 1px solid var(--line);
+  }
+  .spec-cell:last-child { border-right: none; }
+  .spec-tag {
+    color: var(--amber);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .spec-type {
+    color: var(--ink-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .spec-desc { color: var(--ink); }
+
+  /* Phase timeline */
+  .phase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 32px;
+  }
+  .phase {
+    background: var(--panel);
+    padding: 32px 36px;
+    display: grid;
+    grid-template-columns: 80px 220px 1fr;
+    gap: 32px;
+    align-items: start;
+    transition: background 0.3s;
+  }
+  .phase:hover { background: var(--panel-2); }
+  .phase-num {
+    font-family: var(--serif);
+    font-size: 48px;
+    line-height: 1;
+    color: var(--amber);
+    font-weight: 300;
+  }
+  .phase-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .phase-label {
+    font-size: 10px;
+    color: var(--ink-low);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .phase-body {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.75;
+  }
+  .phase-body strong { color: var(--amber); font-weight: 600; }
+
+  /* Sequence cards */
+  .seq-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .seq-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 20px;
+    border-top: 3px solid var(--amber);
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .seq-card:hover { transform: translateY(-3px); border-top-color: var(--green); }
+  .seq-card.transfer { border-top-color: var(--green); }
+  .seq-card.hold { border-top-color: var(--amber); }
+  .seq-card.filter { border-top-color: var(--cyan); }
+  .seq-card.shutdown { border-top-color: var(--blue); }
+  .seq-card.eshutdown { border-top-color: var(--red); }
+  .seq-name {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .seq-steps {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .seq-desc {
+    color: var(--ink-dim);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  /* Abnormal conditions */
+  .cond-table {
+    margin-top: 32px;
+    border: 1px solid var(--line);
+  }
+  .cond-header {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 120px;
+    background: var(--panel-2);
+    padding: 12px 20px;
+    font-size: 10px;
+    color: var(--ink-low);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--line);
+  }
+  .cond-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 120px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    font-size: 13px;
+    transition: background 0.2s;
+  }
+  .cond-row:last-child { border-bottom: none; }
+  .cond-row:hover { background: var(--panel-2); }
+  .cond-id { color: var(--ink-low); font-size: 11px; }
+  .cond-trigger { color: var(--ink); }
+  .cond-trigger code {
+    color: var(--amber);
+    background: rgba(245,166,35,0.08);
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+  .cond-time { color: var(--ink-dim); font-size: 12px; }
+  .cond-response {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .cond-response.alarm { background: var(--amber-glow); color: var(--amber); border: 1px solid var(--amber); }
+  .cond-response.hold { background: var(--green-glow); color: var(--green); border: 1px solid var(--green); }
+  .cond-response.shutdown { background: var(--red-glow); color: var(--red); border: 1px solid var(--red); }
+
+  /* HMI gallery */
+  .hmi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .hmi-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 16px;
+    transition: border-color 0.3s;
+  }
+  .hmi-card:hover { border-color: var(--amber); }
+  .hmi-card.large { grid-column: span 4; }
+  .hmi-card.small { grid-column: span 2; }
+  .hmi-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 12px;
+    background: #fff;
+    border: 1px solid var(--line);
+  }
+  .hmi-label {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .hmi-caption {
+    color: var(--ink-dim);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  /* Skills grid */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 32px;
+  }
+  .skill {
+    background: var(--panel);
+    padding: 24px;
+  }
+  .skill-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--amber);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .skill ul {
+    list-style: none;
+    color: var(--ink-dim);
+    font-size: 12.5px;
+    line-height: 1.8;
+  }
+  .skill ul li {
+    padding-left: 16px;
+    position: relative;
+  }
+  .skill ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--ink-low);
+  }
+
+  /* Outcome */
+  .outcome {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--line);
+    padding: 48px;
+    margin-top: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .outcome::before {
+    content: 'COMMISSIONED';
+    position: absolute;
+    top: 20px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--green);
+    border: 1px solid var(--green);
+    padding: 4px 12px;
+  }
+  .outcome p {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--ink);
+    max-width: 820px;
+  }
+  .outcome p em {
+    color: var(--amber);
+    font-style: italic;
+  }
+
+  /* Footer */
+  footer {
+    padding: 60px 0 40px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-low);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .section-header { grid-template-columns: 1fr; gap: 16px; }
+    .seq-grid { grid-template-columns: repeat(2, 1fr); }
+    .hmi-grid { grid-template-columns: 1fr; }
+    .hmi-card.large, .hmi-card.small { grid-column: span 1; }
+    .skills-grid { grid-template-columns: 1fr; }
+    .arch-card.span-6, .arch-card.span-4, .arch-card.span-8 { grid-column: span 12; }
+    .phase { grid-template-columns: 60px 1fr; }
+    .phase-meta-col { grid-column: 2; }
+    .cond-header, .cond-row { grid-template-columns: 40px 1fr 100px; }
+    .cond-time { display: none; }
+    .spec-row { grid-template-columns: 1fr; }
+    .spec-cell { border-right: none; border-bottom: 1px solid var(--line); }
+    .statusbar { padding: 10px 16px; font-size: 10px; }
+    .statusbar .right .hide-mobile { display: none; }
+    .container { padding: 0 16px; }
+  }
+
+  /* Animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade { animation: fadeUp 0.8s ease-out backwards; }
+  .fade-1 { animation-delay: 0.1s; }
+  .fade-2 { animation-delay: 0.2s; }
+  .fade-3 { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="left">
+    <span><span class="led"></span>CmpLogix-11 · ONLINE</span>
+    <span class="hide-mobile">PROJECT // TPow_Unl.acd</span>
+  </div>
+  <div class="right">
+    <span class="hide-mobile">EE 5340 · ADVANCED PLC</span>
+    <span>REV 37</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-tag fade fade-1">Unit-Level Control System / Pneumatic Conveying</div>
+        <h1 class="fade fade-2">Truck Powder <em>Ingredient</em> Unload</h1>
+        <p class="hero-sub fade fade-3">
+          A CompactLogix 5069-L306ER distributed-I/O PLC project that automates pneumatic
+          unloading of a powder-ingredient truck into plant storage tanks — with full
+          Transfer / Hold / FilterClean / Shutdown / E-Shutdown sequencing and a FactoryTalk
+          View ME HMI.
+        </p>
+        <div class="hero-meta">
+          <div class="meta-cell">
+            <div class="meta-label">Controller</div>
+            <div class="meta-value">5069-L306ER</div>
+          </div>
+          <div class="meta-cell">
+            <div class="meta-label">Sequences</div>
+            <div class="meta-value">5 · PackML</div>
+          </div>
+          <div class="meta-cell">
+            <div class="meta-label">Field Devices</div>
+            <div class="meta-value">9 XV · 2 Motor</div>
+          </div>
+          <div class="meta-cell">
+            <div class="meta-label">HMI</div>
+            <div class="meta-value">FT View ME</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="schematic-card fade fade-3">
+        <div class="schematic-title">SCHEMATIC / FLOW DIAGRAM</div>
+        <div class="schematic">
+          <svg viewBox="0 0 340 360" xmlns="http://www.w3.org/2000/svg">
+            <!-- Truck -->
+            <g stroke="#f5a623" stroke-width="1.4" fill="none">
+              <rect x="10" y="40" width="70" height="42" rx="3"/>
+              <rect x="20" y="50" width="50" height="22" rx="2" stroke="#5a5a55"/>
+              <circle cx="25" cy="86" r="5" fill="#1d2024"/>
+              <circle cx="65" cy="86" r="5" fill="#1d2024"/>
+            </g>
+            <text x="45" y="105" fill="#8a8a82" font-family="JetBrains Mono" font-size="8" text-anchor="middle">TRUCK</text>
+
+            <!-- Pipe from truck to XV-2412/22 -->
+            <line x1="80" y1="60" x2="115" y2="60" stroke="#4ecdc4" stroke-width="1.5"/>
+            <line x1="80" y1="72" x2="115" y2="72" stroke="#4ecdc4" stroke-width="1.5"/>
+
+            <!-- XV-2412 valve -->
+            <g transform="translate(115,55)">
+              <polygon points="0,0 12,5 12,-5" fill="#6fbf5b" stroke="#6fbf5b"/>
+              <polygon points="24,0 12,5 12,-5" fill="#6fbf5b" stroke="#6fbf5b"/>
+            </g>
+            <text x="127" y="48" fill="#f5a623" font-family="JetBrains Mono" font-size="7" text-anchor="middle">XV-2412</text>
+
+            <!-- XV-2422 valve -->
+            <g transform="translate(115,72)">
+              <polygon points="0,0 12,5 12,-5" fill="none" stroke="#5a5a55"/>
+              <polygon points="24,0 12,5 12,-5" fill="none" stroke="#5a5a55"/>
+            </g>
+            <text x="127" y="88" fill="#8a8a82" font-family="JetBrains Mono" font-size="7" text-anchor="middle">XV-2422</text>
+
+            <!-- Lines to receiver -->
+            <path d="M 139 60 L 175 60 L 175 130" stroke="#4ecdc4" stroke-width="1.5" fill="none"/>
+            <path d="M 139 72 L 165 72 L 165 130" stroke="#5a5a55" stroke-width="1.5" fill="none"/>
+
+            <!-- Receiver T-2440 -->
+            <g stroke="#f5a623" stroke-width="1.4" fill="none">
+              <rect x="145" y="130" width="60" height="60" rx="2"/>
+              <line x1="145" y1="145" x2="205" y2="145" stroke-dasharray="2,2" stroke="#5a5a55"/>
+              <!-- cone bottom -->
+              <polygon points="145,190 205,190 175,210"/>
+            </g>
+            <text x="175" y="165" fill="#8a8a82" font-family="JetBrains Mono" font-size="7" text-anchor="middle">T-2440</text>
+            <text x="175" y="176" fill="#5a5a55" font-family="JetBrains Mono" font-size="6" text-anchor="middle">RECEIVER</text>
+
+            <!-- XV-2444 vent on top -->
+            <line x1="175" y1="130" x2="175" y2="115" stroke="#4ecdc4" stroke-width="1.5"/>
+            <circle cx="175" cy="110" r="4" fill="none" stroke="#6fbf5b" stroke-width="1.2"/>
+            <text x="195" y="113" fill="#8a8a82" font-family="JetBrains Mono" font-size="6">XV-2444</text>
+
+            <!-- L-2441 airlock -->
+            <circle cx="175" cy="220" r="8" fill="none" stroke="#f5a623" stroke-width="1.4"/>
+            <line x1="171" y1="220" x2="179" y2="220" stroke="#f5a623"/>
+            <line x1="175" y1="216" x2="175" y2="224" stroke="#f5a623"/>
+            <text x="195" y="223" fill="#8a8a82" font-family="JetBrains Mono" font-size="6">L-2441</text>
+
+            <!-- Blower B-2445 -->
+            <line x1="175" y1="228" x2="175" y2="245" stroke="#4ecdc4" stroke-width="1.5"/>
+            <circle cx="175" cy="255" r="10" fill="none" stroke="#f5a623" stroke-width="1.4"/>
+            <text x="175" y="258" fill="#f5a623" font-family="JetBrains Mono" font-size="6" text-anchor="middle">B</text>
+            <text x="175" y="278" fill="#8a8a82" font-family="JetBrains Mono" font-size="6" text-anchor="middle">B-2445</text>
+
+            <!-- Line to tanks -->
+            <path d="M 185 255 L 240 255 L 240 90" stroke="#4ecdc4" stroke-width="1.5" fill="none"/>
+
+            <!-- 4 destination tanks -->
+            <g stroke="#f5a623" stroke-width="1.2" fill="none">
+              <rect x="255" y="55" width="20" height="35" rx="1"/>
+              <rect x="280" y="55" width="20" height="35" rx="1"/>
+              <rect x="255" y="100" width="20" height="35" rx="1"/>
+              <rect x="280" y="100" width="20" height="35" rx="1"/>
+            </g>
+            <text x="265" y="76" fill="#5a5a55" font-family="JetBrains Mono" font-size="5" text-anchor="middle">T-2610</text>
+            <text x="290" y="76" fill="#5a5a55" font-family="JetBrains Mono" font-size="5" text-anchor="middle">T-2620</text>
+            <text x="265" y="121" fill="#5a5a55" font-family="JetBrains Mono" font-size="5" text-anchor="middle">T-2630</text>
+            <text x="290" y="121" fill="#5a5a55" font-family="JetBrains Mono" font-size="5" text-anchor="middle">T-2640</text>
+            <text x="278" y="148" fill="#8a8a82" font-family="JetBrains Mono" font-size="7" text-anchor="middle">STORAGE</text>
+
+            <!-- 100 psi purge header -->
+            <g transform="translate(30,170)">
+              <rect width="70" height="14" rx="1" fill="none" stroke="#d9534f" stroke-width="1.2"/>
+              <text x="35" y="10" fill="#d9534f" font-family="JetBrains Mono" font-size="6" text-anchor="middle">100 PSI PURGE</text>
+            </g>
+            <path d="M 100 177 L 130 177 L 130 145" stroke="#d9534f" stroke-width="1.2" fill="none" stroke-dasharray="3,2"/>
+            <text x="115" y="142" fill="#d9534f" font-family="JetBrains Mono" font-size="5">XV-2443</text>
+
+            <!-- Legend -->
+            <g transform="translate(15,310)">
+              <text x="0" y="0" fill="#5a5a55" font-family="JetBrains Mono" font-size="7">LEGEND</text>
+              <circle cx="3" cy="14" r="3" fill="#6fbf5b"/>
+              <text x="12" y="17" fill="#8a8a82" font-family="JetBrains Mono" font-size="7">OPEN / ACTIVE</text>
+              <circle cx="3" cy="28" r="3" fill="none" stroke="#5a5a55"/>
+              <text x="12" y="31" fill="#8a8a82" font-family="JetBrains Mono" font-size="7">CLOSED / IDLE</text>
+              <line x1="120" y1="14" x2="140" y2="14" stroke="#4ecdc4" stroke-width="1.5"/>
+              <text x="148" y="17" fill="#8a8a82" font-family="JetBrains Mono" font-size="7">PROCESS</text>
+              <line x1="120" y1="28" x2="140" y2="28" stroke="#d9534f" stroke-width="1.2" stroke-dasharray="3,2"/>
+              <text x="148" y="31" fill="#8a8a82" font-family="JetBrains Mono" font-size="7">PURGE AIR</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>01</span>Overview</div>
+      <h2 class="section-title">A semester build for the <em>real</em> entry-level controls workflow.</h2>
+    </div>
+    <div class="prose">
+      <p>
+        This project is a graduate team build in the <strong>EE 5340 Advanced PLC</strong> lab. The
+        scope was to design, program, simulate, and commission a complete unit-level control system
+        for the Truck Powder Ingredient Unload station — the plant skid that pneumatically conveys
+        dry powder ingredients out of a tanker trailer, through a vacuum receiver and airlock, and
+        into one of four ingredient storage tanks downstream.
+      </p>
+      <p>
+        The unit is realized on a Rockwell Automation <strong>CompactLogix 5069-L306ER</strong>
+        processor (cell <code>CmpLogix-11</code>) that hangs off the main plant <code>ABClogix4</code>
+        controller via a 1756-EN2TR Ethernet/IP bridge in slot 7, and is operated from a dedicated
+        FactoryTalk View ME HMI.
+      </p>
+      <p>
+        The deliverable exercises the full controls workflow — sequence-diagram authorship,
+        AOI-based device programming, PackML-style state management, HMI screen design, and
+        inter-processor messaging — on a real pneumatic-conveying process that shares destination
+        tanks with a parallel Rail Powder Unload unit, so destination-tank coordination and
+        abnormal-condition handling are first-class concerns rather than afterthoughts.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>02</span>System Architecture</div>
+      <h2 class="section-title">Distributed I/O, AOI device layer, <em>PackML</em> supervisor.</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        The unit is organized around a single CompactLogix 5069-L306ER controller that owns all of
+        its own I/O, drives all local field devices, and communicates upstream to the plant
+        ControlLogix through a 1756-EN2TR bridge. Destination-tank coordination — which of four
+        ingredient storage tanks the unload routes to, and the interlock preventing a simultaneous
+        Rail Powder Unload to the same tank — is handled with MSG reads/writes across that bridge.
+      </p>
+    </div>
+
+    <div class="arch-grid">
+      <div class="arch-card span-4">
+        <div class="arch-card-label">Layer 01</div>
+        <h3 class="arch-card-title">Sequence Supervisor</h3>
+        <p>One of five sequences active at a time — Transfer, Hold, FilterClean, Shutdown, E-Shutdown — each authored as an explicit step diagram and implemented as a step-latched ladder routine.</p>
+      </div>
+      <div class="arch-card span-4">
+        <div class="arch-card-label">Layer 02</div>
+        <h3 class="arch-card-title">Device Layer</h3>
+        <p>Built entirely from vendor AOIs (motor, valve, slide-gate, flop-gate) exposing a consistent <code>.Cmd</code> / <code>.Status</code> / <code>.Fail</code> interface. Sequences never touch raw I/O bits.</p>
+      </div>
+      <div class="arch-card span-4">
+        <div class="arch-card-label">Layer 03</div>
+        <h3 class="arch-card-title">Abnormal Monitor</h3>
+        <p>Runs in parallel with whatever sequence is active. Elevates low-vacuum, high-discharge-pressure, device-fail, and valve-feedback faults into the appropriate Alarm / Hold / Shutdown response.</p>
+      </div>
+
+      <div class="arch-card span-8">
+        <div class="arch-card-label">Hardware Stack</div>
+        <h3 class="arch-card-title">CompactLogix 5069-L306ER + distributed I/O</h3>
+        <p style="margin-bottom: 16px;">
+          Rev 37 controller. Slot 1: 5069-IB16F 16-pt 24 VDC high-speed sinking input (Series A,
+          Rev 2.001). Slot 2: 5069-OB16F 16-pt sourcing output (Series B, Rev 3.001). Onboard dual
+          Ethernet (A1/A2) configured in Linear / DLR mode so the unit can be chained into a
+          device-level ring with neighboring cells without a dedicated ring switch.
+        </p>
+        <p>
+          A 1756-EN2TR two-port Ethernet/IP bridge in slot 7 of the plant ABClogix4 chassis provides
+          the handoff up to the plant ControlLogix — the channel for MSG-based destination-tank
+          handshakes between the Truck Powder and Rail Powder unload unit controllers.
+        </p>
+      </div>
+      <div class="arch-card span-4">
+        <div class="arch-card-label">Software Stack</div>
+        <h3 class="arch-card-title">Studio 5000 + FT View ME</h3>
+        <p>
+          Ladder Diagram under Studio 5000 Logix Designer. Vendor AOIs for all field devices. UDTs
+          bundle step register, step timer, operator commands, transition flags, per-step outputs.
+          AFI diagnostic rungs in unfinished branches during development.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EQUIPMENT TAG TABLE -->
+<section id="equipment">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>03</span>Process Equipment</div>
+      <h2 class="section-title">Vacuum receiver, blower, airlock, <em>nine</em> motorized valves.</h2>
+    </div>
+
+    <div class="spec-table">
+      <div class="spec-row" style="background: var(--panel-2);">
+        <div class="spec-cell spec-type">TAG</div>
+        <div class="spec-cell spec-type">CLASS</div>
+        <div class="spec-cell spec-type">FUNCTION</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">T-2440</div>
+        <div class="spec-cell spec-type">Receiver</div>
+        <div class="spec-cell spec-desc">Cyclone-type vacuum receiver with integrated cartridge filter</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">B-2445</div>
+        <div class="spec-cell spec-type">Blower</div>
+        <div class="spec-cell spec-desc">Positive-displacement blower — pulls vacuum on receiver, pushes powder downstream</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">L-2441</div>
+        <div class="spec-cell spec-type">Airlock</div>
+        <div class="spec-cell spec-desc">Rotary airlock — isolates vacuum from destination-tank fill line</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">XV-2412 / XV-2422</div>
+        <div class="spec-cell spec-type">Valve</div>
+        <div class="spec-cell spec-desc">Truck-station unload valves — select trailer position being drawn from</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">XV-2447</div>
+        <div class="spec-cell spec-type">Valve</div>
+        <div class="spec-cell spec-desc">Truck-station outlet block — must be open whenever the blower is running</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">XV-2443</div>
+        <div class="spec-cell spec-type">Valve</div>
+        <div class="spec-cell spec-desc">Receiver purge-inlet valve — used during filter-cleaning pulses</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">XV-2444</div>
+        <div class="spec-cell spec-type">Valve</div>
+        <div class="spec-cell spec-desc">Receiver vent valve</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">XV-2611 / 2621 / 2631 / 2641</div>
+        <div class="spec-cell spec-type">Valve</div>
+        <div class="spec-cell spec-desc">Destination-tank fill valves → T-2610 / T-2620 / T-2630 / T-2640</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">FI / FQI-2448</div>
+        <div class="spec-cell spec-type">Instrument</div>
+        <div class="spec-cell spec-desc">Mass-flow meter (0–300 lb/min) with totalizer</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">PI-2442 / PI-2445</div>
+        <div class="spec-cell spec-type">Instrument</div>
+        <div class="spec-cell spec-desc">Vacuum transmitters (0–15 psi) — receiver and blower suction</div>
+      </div>
+      <div class="spec-row">
+        <div class="spec-cell spec-tag">PI-2443 / PI-2446</div>
+        <div class="spec-cell spec-type">Instrument</div>
+        <div class="spec-cell spec-desc">Pressure transmitters (0–100 psi) — purge-air header and blower discharge</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHASES -->
+<section id="phases">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>04</span>Phase-by-Phase Progression</div>
+      <h2 class="section-title">From control narrative to <em>commissioned</em> unit.</h2>
+    </div>
+
+    <div class="phase-list">
+      <div class="phase">
+        <div class="phase-num">01</div>
+        <div>
+          <div class="phase-label">Sequence Design</div>
+          <h3 class="phase-title">Control narrative → step diagrams</h3>
+        </div>
+        <div class="phase-body">
+          Five sequences authored in a single Excel workbook — one sheet per sequence — each captured
+          as an ordered list of steps with entry conditions, output actions, transition conditions,
+          and exit destinations. <strong>Transfer</strong> is 19 steps; <strong>Hold</strong> is 14
+          rows of mid-run manipulation paths; <strong>FilterClean</strong> is 22 steps including the
+          0.5s open / closed / 1s pause purge pulses; <strong>Shutdown</strong> is 17 steps of
+          ordered stop (blower → airlock → valves); <strong>E-Shutdown</strong> is 5 parallel-action
+          steps with a 15-second lockout timer.
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num">02</div>
+        <div>
+          <div class="phase-label">AOI Device Layer & Simulation</div>
+          <h3 class="phase-title">Wrap every device, force every limit</h3>
+        </div>
+        <div class="phase-body">
+          Imported vendor AOI libraries for motor, valve, slide-gate, and flop-gate device classes
+          and wired every field device into its appropriate AOI instance. AFI rungs sat in front of
+          any half-implemented device call during development so the ladder could be downloaded,
+          scanned, and simulated without firing physical outputs. Simulation forced
+          <strong>Sts_Open</strong> / <strong>Sts_Closed</strong> limit-switch bits and the
+          <strong>Sts_Running</strong> contact on the blower and airlock, stepping the sequences
+          through in controller tags and confirming each step's outputs matched the spreadsheet.
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num">03</div>
+        <div>
+          <div class="phase-label">HMI & Device Command Screens</div>
+          <h3 class="phase-title">P&amp;ID overview + layered pop-ups</h3>
+        </div>
+        <div class="phase-body">
+          A main <strong>Remote Operator</strong> screen drawn in the style of a classic P&amp;ID —
+          truck silhouette at left, XV valves feeding into the receiver and bag filter, blower,
+          100 psi purge-air header at upper right, four destination tanks at far right — with
+          color-animated valve bodies, running-state animation on blower and airlock, and live
+          numeric fields for FI-2448, FQI-2448, PI-2442, PI-2443, PI-2445, PI-2446. Two operator
+          pop-ups (<strong>Sequence Starts</strong>, <strong>Operator Selection</strong>) and
+          device-level pop-ups (valve Open/Close, blower Start/Stop) for Local Control.
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num">04</div>
+        <div>
+          <div class="phase-label">Abnormal Conditions & Plant Integration</div>
+          <h3 class="phase-title">Eight conditions, three responses</h3>
+        </div>
+        <div class="phase-body">
+          Eight conditions implemented as a parallel monitor routine, mapping process-variable
+          excursions and device-feedback failures into the correct
+          <strong>Alarm / Hold / Shutdown</strong> response. The shared-destination-tank interlock
+          was implemented with <strong>MSG</strong> blocks reading the Rail Powder Unload unit's
+          active-destination register out of the plant ControlLogix through the 1756-EN2TR bridge —
+          so the Transfer sequence's "destination clear" precondition reflects plant-wide state
+          rather than a local assumption.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEQUENCES -->
+<section id="sequences">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>05</span>The Five Sequences</div>
+      <h2 class="section-title">Auto-chaining state machine.</h2>
+    </div>
+
+    <div class="seq-grid">
+      <div class="seq-card transfer">
+        <div class="seq-name">Transfer</div>
+        <div class="seq-steps">19 Steps · Default Run</div>
+        <p class="seq-desc">Selects source valve + destination tank, verifies tank &lt;80% and no Rail conflict, baselines all valves, zeroes totalizer, brings up airlock then blower. Auto-chains to Shutdown when flow drops below 5 lb/min or tank hits 95%.</p>
+      </div>
+      <div class="seq-card hold">
+        <div class="seq-name">Hold</div>
+        <div class="seq-steps">14 Rows · Mid-Run</div>
+        <p class="seq-desc">Captures mid-run manipulation options — lifting a single valve, pausing the blower, resuming — with clean exits back to Transfer, forward to Shutdown, or to E-Shutdown.</p>
+      </div>
+      <div class="seq-card filter">
+        <div class="seq-name">FilterClean</div>
+        <div class="seq-steps">22 Steps · Maintenance</div>
+        <p class="seq-desc">Opens receiver vent XV-2444, then pulses purge-inlet XV-2443 open for 0.5s / closed / 1s pause — three cycles — before auto-chaining into Shutdown.</p>
+      </div>
+      <div class="seq-card shutdown">
+        <div class="seq-name">Shutdown</div>
+        <div class="seq-steps">17 Steps · Ordered Stop</div>
+        <p class="seq-desc">Brings the blower down first, then the airlock, then closes the nine valves in a defined sequence so the receiver does not slam shut on vacuum.</p>
+      </div>
+      <div class="seq-card eshutdown">
+        <div class="seq-name">E-Shutdown</div>
+        <div class="seq-steps">5 Steps · Emergency</div>
+        <p class="seq-desc">Trips blower and airlock in parallel, closes all nine valves in parallel, holds a 15-second lockout timer before the unit will accept another start.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABNORMAL CONDITIONS -->
+<section id="conditions">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>06</span>Abnormal Conditions Matrix</div>
+      <h2 class="section-title">Map the physics, choose the <em>response</em>.</h2>
+    </div>
+
+    <div class="cond-table">
+      <div class="cond-header">
+        <div>ID</div>
+        <div>TRIGGER</div>
+        <div>DWELL</div>
+        <div>RESPONSE</div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">01</div>
+        <div class="cond-trigger"><code>PI-2442 &lt; 3 psi</code> with blower running</div>
+        <div class="cond-time">30 sec</div>
+        <div><span class="cond-response shutdown">Shutdown</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">02</div>
+        <div class="cond-trigger"><code>PI-2445 &lt; 3 psi</code> with blower running</div>
+        <div class="cond-time">20 sec</div>
+        <div><span class="cond-response shutdown">Shutdown</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">03</div>
+        <div class="cond-trigger"><code>PI-2446 &gt; 80 psi</code> blower discharge</div>
+        <div class="cond-time">5 sec</div>
+        <div><span class="cond-response alarm">Alarm</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">04</div>
+        <div class="cond-trigger"><code>PI-2446 &gt; 90 psi</code> blower discharge</div>
+        <div class="cond-time">10 sec</div>
+        <div><span class="cond-response shutdown">Shutdown</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">05</div>
+        <div class="cond-trigger">Motor AOI reports <code>Sts_Fail</code></div>
+        <div class="cond-time">immediate</div>
+        <div><span class="cond-response hold">Hold</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">06</div>
+        <div class="cond-trigger">Valve AOI reports <code>Sts_Fail</code></div>
+        <div class="cond-time">immediate</div>
+        <div><span class="cond-response hold">Hold</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">07</div>
+        <div class="cond-trigger">Auxiliary / HOA / Overload event</div>
+        <div class="cond-time">immediate</div>
+        <div><span class="cond-response alarm">Alarm</span></div>
+      </div>
+      <div class="cond-row">
+        <div class="cond-id">08</div>
+        <div class="cond-trigger">Valve feedback failure (Fail-To-Open / Close)</div>
+        <div class="cond-time">immediate</div>
+        <div><span class="cond-response alarm">Alarm</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HMI SCREENS -->
+<section id="hmi">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>07</span>HMI Screens</div>
+      <h2 class="section-title">FactoryTalk View ME — overview &amp; <em>command</em> pop-ups.</h2>
+    </div>
+
+    <div class="hmi-grid">
+      <div class="hmi-card large">
+        <img src="https://psk-hub.github.io/TPow_Unl/hmi_fig1_remote_operator.png" alt="Remote Operator screen" loading="lazy">
+        <div class="hmi-label">Fig. 01 / Main Overview</div>
+        <div class="hmi-caption">Remote Operator screen — full flow-path overview with Local / Sequence Starts / Selection navigation, Reset Alarms button, Maintenance Mode indicator.</div>
+      </div>
+      <div class="hmi-card small">
+        <img src="https://psk-hub.github.io/TPow_Unl/hmi_fig2_sequence_starts.png" alt="Sequence Starts popup" loading="lazy">
+        <div class="hmi-label">Fig. 02 / Sequence Starts</div>
+        <div class="hmi-caption">Transfer / Hold / FilterClean / Shutdown / EShutdown request buttons with active-sequence indicators.</div>
+      </div>
+      <div class="hmi-card small">
+        <img src="https://psk-hub.github.io/TPow_Unl/hmi_fig3_operator_selection.png" alt="Operator Selection popup" loading="lazy">
+        <div class="hmi-label">Fig. 03 / Operator Selection</div>
+        <div class="hmi-caption">Choose source unload valve (XV-2412 / XV-2422) and destination tank (T-2610–2640), then Confirm to arm the Transfer.</div>
+      </div>
+      <div class="hmi-card small">
+        <img src="https://psk-hub.github.io/TPow_Unl/hmi_fig4_valve_command.png" alt="XV-2422 Valve Command popup" loading="lazy">
+        <div class="hmi-label">Fig. 04 / Valve Command</div>
+        <div class="hmi-caption">XV-2422 shown — direct Open/Close manipulation of any motorized valve from Local Control.</div>
+      </div>
+      <div class="hmi-card small">
+        <img src="https://psk-hub.github.io/TPow_Unl/hmi_fig5_blower_command.png" alt="B-2445 Blower Command popup" loading="lazy">
+        <div class="hmi-label">Fig. 05 / Blower Command</div>
+        <div class="hmi-caption">B-2445 — direct Start/Stop control of the positive-displacement blower when a sequence is not active.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>08</span>Skills Demonstrated</div>
+      <h2 class="section-title">A cross-section of <em>practicing</em> controls engineering.</h2>
+    </div>
+
+    <div class="skills-grid">
+      <div class="skill">
+        <div class="skill-name">Programming</div>
+        <ul>
+          <li>Ladder Diagram authorship</li>
+          <li>AOI consumption &amp; instancing</li>
+          <li>UDT design for sequence state</li>
+          <li>AFI for staged development</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <div class="skill-name">Sequence Design</div>
+        <ul>
+          <li>ISA-TR88 / PackML modeling</li>
+          <li>Explicit entry &amp; transition conditions</li>
+          <li>Auto-chaining between sequences</li>
+          <li>Operator-intent propagation</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <div class="skill-name">HMI</div>
+        <ul>
+          <li>FactoryTalk View ME screens</li>
+          <li>Live process animation</li>
+          <li>Pop-up command &amp; selection</li>
+          <li>Alarm-reset plumbing</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <div class="skill-name">Hardware</div>
+        <ul>
+          <li>CompactLogix 5069 I/O commissioning</li>
+          <li>Series / Revision management</li>
+          <li>Linear / DLR onboard Ethernet</li>
+          <li>Pneumatic-conveying instrumentation</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <div class="skill-name">Networking</div>
+        <ul>
+          <li>Ethernet/IP and CIP</li>
+          <li>MSG reads/writes across 1756-EN2TR</li>
+          <li>Inter-processor interlock design</li>
+          <li>Multi-controller coordination</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <div class="skill-name">Safety &amp; Reliability</div>
+        <ul>
+          <li>Structured abnormal-conditions framework</li>
+          <li>Process-variable excursion mapping</li>
+          <li>Device-feedback fault handling</li>
+          <li>Alarm / Hold / Shutdown discrimination</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OUTCOME -->
+<section id="outcome" style="border-bottom: none;">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num"><span>09</span>Outcome</div>
+      <h2 class="section-title">Boots clean, runs all five, <em>refuses</em> the wrong tank.</h2>
+    </div>
+
+    <div class="outcome">
+      <p>
+        The final deliverable is a working Truck Powder Ingredient Unload unit that boots cleanly on
+        its CompactLogix controller, presents a complete flow-path overview and device-command HMI
+        to the operator, executes each of the five sequences end-to-end against simulated field I/O,
+        correctly refuses to start a Transfer to a destination tank that the Rail Powder Unload unit
+        is already filling, and elevates low-vacuum, high-discharge-pressure, and device-failure
+        events into the correct Alarm / Hold / Shutdown responses.
+        <em>The most valuable outcome was the end-to-end experience itself</em> — carrying a
+        control-narrative specification through sequence-diagram authorship, AOI-based ladder
+        implementation, HMI screen design, and plant-level interlock negotiation. The same path an
+        entry-level controls engineer walks on every greenfield skid they deliver.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div>TPow_Unl &nbsp;//&nbsp; EE 5340 Advanced PLC</div>
+    <div>CmpLogix-11 &nbsp;·&nbsp; Studio 5000 &nbsp;·&nbsp; FT View ME</div>
+  </div>
+</footer>
+
+</body>
+</html>
